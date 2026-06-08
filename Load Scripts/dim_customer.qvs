@@ -1,0 +1,12 @@
+dim_customer:
+LOAD
+    customer_id,
+    full_name,
+    segment,
+    city_type,
+    region,
+    outlet_type,
+    state,
+    country
+FROM [lib://DataFiles/dim_customer.qvd]
+(qvd);
