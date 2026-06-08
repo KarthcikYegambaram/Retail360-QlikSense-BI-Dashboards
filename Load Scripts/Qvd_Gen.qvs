@@ -1,0 +1,98 @@
+LIB CONNECT TO 'Databricks_dbc-5265dcc1-76fd.cloud.databricks.com';
+
+//////////////////////////////////////////////////////////////
+// CUSTOMER DIMENSION
+//////////////////////////////////////////////////////////////
+
+[dim_customer]:
+LOAD
+    customer_id,
+    full_name,
+    segment,
+    city_type,
+    region,
+    outlet_type,
+    state,
+    country;
+
+SELECT
+    customer_id,
+    full_name,
+    segment,
+    city_type,
+    region,
+    outlet_type,
+    state,
+    country
+FROM workspace.retail360.gold_dim_customer;
+
+STORE [dim_customer] INTO [lib://DataFiles/dim_customer.qvd](qvd);
+
+
+//////////////////////////////////////////////////////////////
+// PRODUCT DIMENSION
+//////////////////////////////////////////////////////////////
+
+[dim_product]:
+LOAD
+    product_id,
+    product_name,
+    sub_category,
+    category_of_goods;
+
+SELECT
+    product_id,
+    product_name,
+    sub_category,
+    category_of_goods
+FROM workspace.retail360.gold_dim_product;
+
+STORE [dim_product] INTO [lib://DataFiles/dim_product.qvd](qvd);
+
+
+//////////////////////////////////////////////////////////////
+// FACT SALES
+//////////////////////////////////////////////////////////////
+
+[fact_sales]:
+LOAD
+    order_id,
+    customer_id,
+    product_id,
+    date_key,
+	order_date,
+    ship_date,
+    sales_date,
+    sales,
+    quantity,
+    discount,
+    profit,
+    net_sales,
+    profit_margin_pct,
+    shipping_days,
+    ship_mode;
+
+SELECT
+    order_id,
+    customer_id,
+    product_id,
+    date_key,
+    order_date,
+    ship_date,
+    sales_date,
+    
+    sales,
+    quantity,
+    discount,
+    profit,
+    net_sales,
+    profit_margin_pct,
+    shipping_days,
+    ship_mode
+FROM workspace.retail360.gold_fact_sales;
+
+STORE [fact_sales] INTO [lib://DataFiles/fact_sales.qvd](qvd);
+
+drop table dim_customer;
+drop table dim_product;
+drop table fact_sales;
