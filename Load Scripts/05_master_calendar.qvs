@@ -1,0 +1,125 @@
+// ==========================================================
+// CANONICAL BRIDGE TABLE
+// ==========================================================
+
+BridgeCalendar:
+LOAD
+    order_id,
+    order_date AS LinkDate,
+    'Order_Date' AS DateType
+RESIDENT fact_sales
+WHERE NOT IsNull(order_date);
+
+CONCATENATE (BridgeCalendar)
+LOAD
+    order_id,
+    ship_date AS LinkDate,
+    'Ship_Date' AS DateType
+RESIDENT fact_sales
+WHERE NOT IsNull(ship_date);
+
+CONCATENATE (BridgeCalendar)
+LOAD
+    order_id,
+    sales_date AS LinkDate,
+    'Sales_Date' AS DateType
+RESIDENT fact_sales
+WHERE NOT IsNull(sales_date);
+
+
+// ==========================================================
+// MIN/MAX DATE
+// ==========================================================
+
+TempMinMax:
+LOAD
+    Min(LinkDate) AS MinDate,
+    Max(LinkDate) AS MaxDate
+RESIDENT BridgeCalendar;
+
+LET vMinDate = Num(Peek('MinDate', 0, 'TempMinMax'));
+LET vMaxDate = Num(Peek('MaxDate', 0, 'TempMinMax'));
+
+DROP TABLE TempMinMax;
+
+
+// ==========================================================
+// BASE MASTER CALENDAR
+// ==========================================================
+
+MasterCalendar:
+LOAD
+    Date($(vMinDate) + IterNo() - 1) AS LinkDate
+
+AUTOGENERATE 1
+
+WHILE $(vMinDate) + IterNo() - 1 <= $(vMaxDate);
+
+
+// ==========================================================
+// FINAL MASTER CALENDAR
+// ==========================================================
+
+CanonicalCalendar:
+LOAD
+    Date(LinkDate) as LinkDate,
+
+    Num(Date(LinkDate)) as LinkDateKey,
+
+    Day(LinkDate) as Day,
+
+    Week(LinkDate) as Week,
+
+    WeekDay(LinkDate) as WeekDay,
+
+    Month(LinkDate) as Month,
+
+    MonthName(LinkDate) as MonthName,
+
+    Year(LinkDate) as YearNum,
+
+    'Q' & Ceil(Month(LinkDate)/3) as Quarter,
+
+    Dual(Date(MonthStart(LinkDate), 'MMM-YYYY'),
+         MonthStart(LinkDate)) as MonthYear,
+
+    Dual('Q' & Ceil(Month(LinkDate)/3) & ' ' & Year(LinkDate),
+         Year(LinkDate) & Ceil(Month(LinkDate)/3)) as QuarterYear,
+
+    Dual(Year(LinkDate),
+         YearStart(LinkDate)) as Year,
+
+    If(LinkDate >= MonthStart(AddMonths($(vMaxDate), -11)),
+        Dual(Date(MonthStart(LinkDate), 'MMM-YYYY'),
+        MonthStart(LinkDate)),
+    Null()) as Rolling12Months,
+
+    If(Year(LinkDate) = Year($(vMaxDate))
+       and LinkDate <= $(vMaxDate), 1, 0) as AllYearYTDFlag_,
+
+    If(QuarterName(LinkDate) = QuarterName($(vMaxDate))
+       and LinkDate <= $(vMaxDate), 1, 0) as AllYearQTDFlag_,
+
+    If(Month(LinkDate) = Month($(vMaxDate))
+       and Year(LinkDate) = Year($(vMaxDate))
+       and LinkDate <= $(vMaxDate), 1, 0) as AllYearMTDFlag_,
+
+    If(
+        LinkDate >= MonthStart(AddMonths($(vMaxDate),-1))
+        and LinkDate <= AddMonths($(vMaxDate),-1),
+        1,0
+        ) as PrevMTDFlag_,
+
+    If(LinkDate >= MonthStart(AddMonths($(vMaxDate), -11)), 1, 0) as R12MFlag_,
+
+    1 as AllYearLTDFlag_,
+    
+    If(
+    LinkDate >= MonthStart(AddMonths($(vMaxDate),-23))
+    and LinkDate < MonthStart(AddMonths($(vMaxDate),-11)),
+    1,
+    0		) as PrevR12MFlag_
+
+RESIDENT MasterCalendar;
+
+DROP TABLE MasterCalendar;
