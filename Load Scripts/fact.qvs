@@ -1,0 +1,19 @@
+fact_sales:
+LOAD
+    order_id,
+    customer_id,
+    product_id,
+    order_date,
+    ship_date,
+    sales_date,
+    sales,
+    quantity,
+    discount,
+    profit,
+    net_sales,
+    profit_margin_pct,
+    shipping_days,
+    ship_mode
+FROM [lib://DataFiles/fact_sales.qvd]
+(qvd);
+
