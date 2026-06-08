@@ -1,0 +1,8 @@
+dim_product:
+LOAD
+    product_id,
+    product_name,
+    sub_category,
+    category_of_goods
+FROM [lib://DataFiles/dim_product.qvd]
+(qvd);
